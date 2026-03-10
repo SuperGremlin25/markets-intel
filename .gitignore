@@ -1,3 +1,4 @@
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -7,9 +8,32 @@ env/
 venv/
 ENV/
 .venv
-.streamlit/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
 .DS_Store
-*.log
+Thumbs.db
+
+# Environment variables
 .env
 .env.local
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+data/
+
+# Secrets
+secrets.toml
+.streamlit/secrets.toml
+
+# Discord bot session
+*.sessionlog
 node_modules/
+*.log
