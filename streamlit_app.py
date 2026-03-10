@@ -36,7 +36,6 @@ with st.sidebar:
     st.markdown("[Get $500 Bonus - FanDuel](https://fanduel.com)")
     st.markdown("*Affiliate links - we may earn commission*")
 
-@st.cache_data(ttl=60)
 def load_market_data(category_filter, platform_filter):
     polymarket_data = []
     kalshi_data = []
@@ -47,8 +46,8 @@ def load_market_data(category_filter, platform_filter):
     if platform_filter in ["Both", "Kalshi"]:
         kalshi_data = fetch_kalshi_markets(category_filter)
     
-    normalized_data = normalize_market_data(polymarket_data, kalshi_data)
-    return normalized_data
+    combined_data = polymarket_data + kalshi_data
+    return combined_data
 
 with st.spinner("Loading market data..."):
     markets = load_market_data(category, platform)

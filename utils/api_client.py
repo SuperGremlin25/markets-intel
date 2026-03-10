@@ -10,7 +10,7 @@ def fetch_polymarket_markets(category: str = "All") -> List[Dict]:
     Fetch markets from Polymarket API
     """
     try:
-        markets_url = f"{POLYMARKET_API_BASE}/markets?limit=100&active=true"
+        markets_url = f"{POLYMARKET_API_BASE}/markets?limit=100&active=true&closed=false"
         response = requests.get(markets_url, timeout=10)
         response.raise_for_status()
         
@@ -19,7 +19,7 @@ def fetch_polymarket_markets(category: str = "All") -> List[Dict]:
         now = datetime.now(timezone.utc)
         active_markets = [
             m for m in all_markets 
-            if m.get('active', False) and is_market_current(m.get('endDate'), now)
+            if m.get('active', False) and is_market_current(m.get('endDateIso') or m.get('endDate'), now)
         ]
         
         filtered_markets = []
@@ -58,7 +58,7 @@ def fetch_polymarket_markets(category: str = "All") -> List[Dict]:
                     'no_price': no_price,
                     'volume': volume,
                     'liquidity': liquidity,
-                    'end_date': market.get('endDate'),
+                    'end_date': market.get('endDateIso') or market.get('endDate'),
                     'url': f"https://polymarket.com/event/{market.get('slug', '')}"
                 })
         
@@ -118,9 +118,9 @@ def fetch_kalshi_markets(category: str = "All") -> List[Dict]:
                     except ValueError:
                         liquidity = 0.0
                 
-                title = market.get('no_sub_title', ticker)
-                if not title or title == ticker:
-                    title = event_ticker.replace('KX', '').replace('-', ' ')
+                title = event_ticker.replace('KX', '').replace('-', ' ').replace('_', ' ')
+                if not title:
+                    title = ticker
                 
                 filtered_markets.append({
                     'id': ticker,
@@ -186,7 +186,10 @@ def is_market_current(end_date_str: str, now: datetime) -> bool:
         return True
     
     try:
-        end_date = datetime.fromisoformat(end_date_str.replace('Z', '+00:00'))
+        if 'T' in end_date_str:
+            end_date = datetime.fromisoformat(end_date_str.replace('Z', '+00:00'))
+        else:
+            end_date = datetime.fromisoformat(end_date_str).replace(tzinfo=timezone.utc)
         return end_date > now
-    except (ValueError, AttributeError):
+    except (ValueError, AttributeError, TypeError):
         return True
