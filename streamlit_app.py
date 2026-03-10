@@ -59,10 +59,10 @@ with tab1:
     st.header("Live Market Odds")
     
     if markets:
-        df = pd.DataFrame(markets)
+        st.success(f"Found {len(markets)} active markets")
         
-        for idx, market in enumerate(markets[:10]):
-            col1, col2, col3 = st.columns([3, 1, 1])
+        for idx, market in enumerate(markets[:20]):
+            col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
             
             with col1:
                 st.markdown(f"**{market['title']}**")
@@ -73,6 +73,9 @@ with tab1:
             
             with col3:
                 st.metric("No", f"{market['no_price']:.1%}")
+            
+            with col4:
+                st.link_button("View Market", market['url'], use_container_width=True)
             
             st.markdown("---")
     else:
