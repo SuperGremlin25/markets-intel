@@ -49,6 +49,9 @@ def fetch_polymarket_markets(category: str = "All") -> List[Dict]:
                 except (ValueError, TypeError):
                     liquidity = 0.0
                 
+                slug = market.get('slug', '')
+                url = f"https://polymarket.com/market/{slug}" if slug else "https://polymarket.com"
+                
                 filtered_markets.append({
                     'id': str(market.get('id', '')),
                     'title': market.get('question', 'Unknown'),
@@ -59,7 +62,7 @@ def fetch_polymarket_markets(category: str = "All") -> List[Dict]:
                     'volume': volume,
                     'liquidity': liquidity,
                     'end_date': market.get('endDateIso') or market.get('endDate'),
-                    'url': f"https://polymarket.com/event/{market.get('slug', '')}"
+                    'url': url
                 })
         
         return filtered_markets
