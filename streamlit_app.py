@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import plotly.graph_objects as go
-from utils.api_client import fetch_polymarket_markets, fetch_kalshi_markets
+from utils.api_client import fetch_polymarket_markets
 from utils.data_processor import normalize_market_data, calculate_arbitrage
 from utils.visualizations import create_odds_chart, create_network_map
 from utils.db_manager import db
@@ -44,10 +44,8 @@ with st.sidebar:
         ["Most Active", "Biggest Movers", "All Markets"]
     )
     
-    platform = st.selectbox(
-        "Platform",
-        ["Both", "Polymarket", "Kalshi"]
-    )
+    st.markdown("**Platform:** Polymarket")
+    st.caption("Kalshi integration removed due to data quality issues")
     
     st.markdown("---")
     st.markdown("### � Upgrade")
@@ -73,17 +71,10 @@ with st.sidebar:
     st.markdown("[Sign up for Polymarket](https://polymarket.com)")
     st.markdown("*Affiliate link - we may earn commission*")
 
-def load_market_data(platform_filter, view_mode):
-    polymarket_data = []
-    kalshi_data = []
-    
-    if platform_filter in ["Both", "Polymarket"]:
-        polymarket_data = fetch_polymarket_markets('All')
-    
-    if platform_filter in ["Both", "Kalshi"]:
-        kalshi_data = fetch_kalshi_markets('All')
-    
-    combined_data = polymarket_data + kalshi_data
+def load_market_data(view_mode):
+    # Only fetch Polymarket data (Kalshi removed due to data quality issues)
+    polymarket_data = fetch_polymarket_markets('All')
+    combined_data = polymarket_data
     
     # Add 24hr price changes
     for market in combined_data:
@@ -99,7 +90,7 @@ def load_market_data(platform_filter, view_mode):
     return combined_data
 
 with st.spinner("Loading market data..."):
-    markets = load_market_data(platform, view_mode)
+    markets = load_market_data(view_mode)
     
     # Store snapshots for historical tracking
     for market in markets[:50]:  # Store top 50 markets
