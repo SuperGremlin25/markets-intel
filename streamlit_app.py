@@ -5,24 +5,43 @@ import plotly.graph_objects as go
 from utils.api_client import fetch_polymarket_markets, fetch_kalshi_markets
 from utils.data_processor import normalize_market_data, calculate_arbitrage
 from utils.visualizations import create_odds_chart, create_network_map
+from utils.db_manager import db
 import config
 
 st.set_page_config(
-    page_title="Markets Intel by DIM",
-    page_icon="📊",
+    page_title="Markets Intel - AI-Powered Prediction Market Intelligence",
+    page_icon="🎯",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-st.title("📊 Markets Intel by DIM")
-st.markdown("**Real-time prediction market intelligence from Polymarket and Kalshi**")
+# Custom CSS for dark terminal theme
+st.markdown("""
+<style>
+    .main {
+        background-color: #06060a;
+    }
+    .stMetric {
+        background-color: #0f0f14;
+        padding: 10px;
+        border-radius: 5px;
+    }
+    h1, h2, h3 {
+        color: #00ff88;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+st.title("🎯 Markets Intel")
+st.markdown("**AI-Powered Prediction Market Intelligence**")
+st.markdown("Real-time data • Social sentiment • Arbitrage detection • Whale tracking")
 
 with st.sidebar:
-    st.header("⚙️ Filters")
+    st.header("⚙️ View Options")
     
-    category = st.selectbox(
-        "Category",
-        ["All", "NBA", "NCAA Basketball", "UFC", "World Events"]
+    view_mode = st.selectbox(
+        "Sort By",
+        ["Most Active", "Biggest Movers", "All Markets"]
     )
     
     platform = st.selectbox(
@@ -31,26 +50,60 @@ with st.sidebar:
     )
     
     st.markdown("---")
-    st.markdown("### 💰 Start Betting")
-    st.markdown("[Get $1000 Bonus - DraftKings](https://draftkings.com)")
-    st.markdown("[Get $500 Bonus - FanDuel](https://fanduel.com)")
-    st.markdown("*Affiliate links - we may earn commission*")
+    st.markdown("### � Upgrade")
+    st.markdown("**Premium** ($29/mo)")
+    st.markdown("• AI predictions")
+    st.markdown("• Real-time whale alerts")
+    st.markdown("• Arbitrage opportunities")
+    
+    st.markdown("**Pro** ($99/mo)")
+    st.markdown("• Everything in Premium")
+    st.markdown("• Auto-execution guidance")
+    st.markdown("• Portfolio optimizer")
+    
+    st.link_button("Upgrade Now", "https://digital-insurgent-media.com/markets", use_container_width=True)
+    
+    st.markdown("---")
+    st.markdown("### 🎮 Join Community")
+    st.markdown("[Discord Server](https://discord.gg/your-invite)")
+    st.markdown("Get alerts, discuss markets, share wins")
+    
+    st.markdown("---")
+    st.markdown("### 🔗 Trade on Polymarket")
+    st.markdown("[Sign up for Polymarket](https://polymarket.com)")
+    st.markdown("*Affiliate link - we may earn commission*")
 
-def load_market_data(category_filter, platform_filter):
+def load_market_data(platform_filter, view_mode):
     polymarket_data = []
     kalshi_data = []
     
     if platform_filter in ["Both", "Polymarket"]:
-        polymarket_data = fetch_polymarket_markets(category_filter)
+        polymarket_data = fetch_polymarket_markets('All')
     
     if platform_filter in ["Both", "Kalshi"]:
-        kalshi_data = fetch_kalshi_markets(category_filter)
+        kalshi_data = fetch_kalshi_markets('All')
     
     combined_data = polymarket_data + kalshi_data
+    
+    # Add 24hr price changes
+    for market in combined_data:
+        change = db.get_24hr_price_change(market['id'])
+        market['change_24hr'] = change if change is not None else 0
+    
+    # Sort based on view mode
+    if view_mode == "Most Active":
+        combined_data.sort(key=lambda x: x.get('volume', 0), reverse=True)
+    elif view_mode == "Biggest Movers":
+        combined_data.sort(key=lambda x: abs(x.get('change_24hr', 0)), reverse=True)
+    
     return combined_data
 
 with st.spinner("Loading market data..."):
-    markets = load_market_data(category, platform)
+    markets = load_market_data(platform, view_mode)
+    
+    # Store snapshots for historical tracking
+    for market in markets[:50]:  # Store top 50 markets
+        db.store_market_snapshot(market)
 
 tab1, tab2, tab3, tab4 = st.tabs(["📊 Live Odds", "📈 Historical Trends", "🕸️ Network Analysis", "💎 Arbitrage"])
 
