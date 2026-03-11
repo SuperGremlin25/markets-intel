@@ -22,12 +22,19 @@ class DatabaseManager:
         
         if supabase_url and supabase_key and supabase_key != 'your_anon_key_here':
             try:
-                self.client: Client = create_client(supabase_url, supabase_key)
+                # Create client with minimal options to avoid compatibility issues
+                from supabase import create_client as supabase_create_client
+                self.client = supabase_create_client(
+                    supabase_url=supabase_url,
+                    supabase_key=supabase_key
+                )
                 self.enabled = True
                 print("✅ Supabase connected successfully")
             except Exception as e:
-                print(f"⚠️ Supabase connection failed: {e}")
+                print(f"⚠️ Supabase connection failed: {str(e)}")
                 print("Database features disabled. App will continue without historical data.")
+                self.client = None
+                self.enabled = False
         else:
             print("⚠️ Supabase credentials not configured. Database features disabled.")
     

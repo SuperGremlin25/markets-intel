@@ -15,7 +15,7 @@ telethon==1.34.0
 feedparser==6.0.11
 
 # Database
-supabase==2.3.4
+supabase==2.0.3
 
 # Discord Bot
 discord.py==2.3.2
