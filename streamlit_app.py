@@ -104,7 +104,7 @@ with tab1:
     if markets:
         st.success(f"Found {len(markets)} active markets")
         
-        for idx, market in enumerate(markets[:20]):
+        for idx, market in enumerate(markets):
             col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
             
             with col1:
@@ -112,10 +112,10 @@ with tab1:
                 st.caption(f"{market['platform']} • {market['category']}")
             
             with col2:
-                st.metric("Yes", f"{market['yes_price']:.1%}")
+                st.metric("Yes", f"${market['yes_price']:.2f}")
             
             with col3:
-                st.metric("No", f"{market['no_price']:.1%}")
+                st.metric("No", f"${market['no_price']:.2f}")
             
             with col4:
                 st.link_button("View Market", market['url'], use_container_width=True)
