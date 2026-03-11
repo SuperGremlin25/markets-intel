@@ -17,13 +17,19 @@ class DatabaseManager:
         supabase_url = os.getenv('SUPABASE_URL')
         supabase_key = os.getenv('SUPABASE_KEY')
         
-        if supabase_url and supabase_key:
-            self.client: Client = create_client(supabase_url, supabase_key)
-            self.enabled = True
+        self.client = None
+        self.enabled = False
+        
+        if supabase_url and supabase_key and supabase_key != 'your_anon_key_here':
+            try:
+                self.client: Client = create_client(supabase_url, supabase_key)
+                self.enabled = True
+                print("✅ Supabase connected successfully")
+            except Exception as e:
+                print(f"⚠️ Supabase connection failed: {e}")
+                print("Database features disabled. App will continue without historical data.")
         else:
-            self.client = None
-            self.enabled = False
-            print("Warning: Supabase credentials not found. Database features disabled.")
+            print("⚠️ Supabase credentials not configured. Database features disabled.")
     
     def store_market_snapshot(self, market: Dict) -> bool:
         """Store a market snapshot for historical tracking"""
