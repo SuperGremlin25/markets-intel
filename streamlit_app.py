@@ -166,21 +166,30 @@ with tab1:
             
             st.caption(f"Showing {len(df)} markets")
             
-            # Display interactive table
+            # Display interactive table with better styling
             st.dataframe(
                 df,
                 column_config={
-                    "Category": st.column_config.TextColumn("Category", width="small"),
-                    "Market": st.column_config.TextColumn("Market", width="large"),
+                    "Category": st.column_config.TextColumn(
+                        "Category", 
+                        width="medium",
+                        help="Market category"
+                    ),
+                    "Market": st.column_config.TextColumn(
+                        "Market", 
+                        width="large"
+                    ),
                     "Yes Price": st.column_config.NumberColumn(
                         "Yes",
                         format="$%.2f",
-                        width="small"
+                        width="small",
+                        help="Price for Yes outcome"
                     ),
                     "No Price": st.column_config.NumberColumn(
                         "No",
                         format="$%.2f",
-                        width="small"
+                        width="small",
+                        help="Price for No outcome"
                     ),
                     "URL": st.column_config.LinkColumn(
                         "Trade",
@@ -192,6 +201,22 @@ with tab1:
                 use_container_width=True,
                 height=600
             )
+            
+            # Category breakdown
+            with st.expander("📊 Category Breakdown"):
+                category_counts = df['Category'].value_counts()
+                col1, col2, col3 = st.columns(3)
+                
+                for idx, (category, count) in enumerate(category_counts.items()):
+                    if idx % 3 == 0:
+                        with col1:
+                            st.metric(category, count)
+                    elif idx % 3 == 1:
+                        with col2:
+                            st.metric(category, count)
+                    else:
+                        with col3:
+                            st.metric(category, count)
     else:
         st.info("No markets found for selected filters")
 

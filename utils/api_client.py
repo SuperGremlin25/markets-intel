@@ -150,15 +150,46 @@ def categorize_polymarket(question: str) -> str:
     """
     question_lower = question.lower()
     
-    nba_teams = ['lakers', 'warriors', 'celtics', 'heat', 'bucks', 'nets', 'sixers', 'nuggets', 'suns', 'clippers']
-    if any(keyword in question_lower for keyword in ['nba'] + nba_teams) and 'basketball' in question_lower:
-        return 'NBA'
-    elif any(keyword in question_lower for keyword in ['ncaa', 'march madness', 'college basketball', 'duke', 'kentucky', 'kansas']):
-        return 'NCAA Basketball'
+    # Politics & Elections
+    if any(keyword in question_lower for keyword in ['election', 'president', 'congress', 'senate', 'politics', 'trump', 'biden', 'kamala', 'desantis', 'republican', 'democrat', 'vote', 'campaign']):
+        return 'Politics'
+    
+    # Crypto & Finance
+    elif any(keyword in question_lower for keyword in ['bitcoin', 'btc', 'ethereum', 'eth', 'crypto', 'blockchain', 'solana', 'dogecoin', 'price', 'stock', 'market cap']):
+        return 'Crypto'
+    
+    # Sports - NHL
+    elif any(keyword in question_lower for keyword in ['nhl', 'stanley cup', 'hockey', 'hurricanes', 'panthers', 'oilers', 'stars', 'avalanche', 'golden knights', 'lightning']):
+        return 'Sports - NHL'
+    
+    # Sports - FIFA/Soccer
+    elif any(keyword in question_lower for keyword in ['fifa', 'world cup', 'soccer', 'football', 'qualify', 'italy', 'sweden', 'poland', 'ukraine']):
+        return 'Sports - Soccer'
+    
+    # Sports - NBA
+    elif any(keyword in question_lower for keyword in ['nba', 'lakers', 'warriors', 'celtics', 'heat', 'bucks', 'nets', 'sixers', 'nuggets', 'suns', 'clippers', 'basketball']):
+        return 'Sports - NBA'
+    
+    # Sports - UFC/MMA
     elif any(keyword in question_lower for keyword in ['ufc', 'mma', 'fight night', 'fighter', 'mcgregor', 'adesanya']):
-        return 'UFC'
-    elif any(keyword in question_lower for keyword in ['election', 'president', 'congress', 'senate', 'politics', 'trump', 'biden']):
+        return 'Sports - UFC'
+    
+    # Entertainment & Pop Culture
+    elif any(keyword in question_lower for keyword in ['gta vi', 'gta 6', 'album', 'rihanna', 'playboi carti', 'jesus christ', 'movie', 'release', 'music', 'artist']):
+        return 'Entertainment'
+    
+    # Technology & AI
+    elif any(keyword in question_lower for keyword in ['openai', 'ai', 'chatgpt', 'hardware', 'tech', 'launch', 'product', 'apple', 'google', 'microsoft']):
+        return 'Technology'
+    
+    # Legal & Crime
+    elif any(keyword in question_lower for keyword in ['convicted', 'trial', 'lawsuit', 'court', 'guilty', 'indicted', 'bitboy']):
+        return 'Legal'
+    
+    # World Events & Geopolitics
+    elif any(keyword in question_lower for keyword in ['russia', 'ukraine', 'china', 'taiwan', 'war', 'ceasefire', 'invade', 'conflict']):
         return 'World Events'
+    
     else:
         return 'Other'
 
