@@ -123,35 +123,67 @@ with tab1:
                 categories[cat] = []
             categories[cat].append(market)
         
-        # Display by category in tables
-        for category, cat_markets in sorted(categories.items()):
-            with st.expander(f"📂 {category} ({len(cat_markets)} markets)", expanded=(category == 'Politics')):
-                table_data = []
-                for market in cat_markets[:20]:
-                    table_data.append({
-                        'Market': market['title'][:80],
-                        'Yes': f"${market['yes_price']:.2f}",
-                        'No': f"${market['no_price']:.2f}",
-                        'Platform': market['platform'],
-                        'Link': market['url']
-                    })
-                
-                if table_data:
-                    df = pd.DataFrame(table_data)
-                    for idx, row in df.iterrows():
-                        col1, col2, col3, col4, col5 = st.columns([4, 1, 1, 1, 1])
-                        with col1:
-                            st.markdown(f"**{row['Market']}**")
-                        with col2:
-                            st.markdown(row['Yes'])
-                        with col3:
-                            st.markdown(row['No'])
-                        with col4:
-                            st.caption(row['Platform'])
-                        with col5:
-                            st.markdown(f"[View]({row['Link']})")
+        # Category filter
+        selected_category = st.selectbox(
+            "Filter by Category",
+            ["All Categories"] + sorted(categories.keys()),
+            index=0
+        )
+        
+        # Prepare data for display
+        display_markets = []
+        if selected_category == "All Categories":
+            display_markets = markets
+        else:
+            display_markets = categories.get(selected_category, [])
+        
+        # Create DataFrame for display
+        table_data = []
+        for market in display_markets:
+            table_data.append({
+                'Category': market.get('category', 'Other'),
+                'Market': market['title'],
+                'Yes Price': market['yes_price'],
+                'No Price': market['no_price'],
+                'URL': market['url']
+            })
+        
+        if table_data:
+            df = pd.DataFrame(table_data)
             
-            st.markdown("---")
+            # Search box
+            search = st.text_input("🔍 Search markets", placeholder="Type to filter...")
+            if search:
+                df = df[df['Market'].str.contains(search, case=False, na=False)]
+            
+            st.caption(f"Showing {len(df)} markets")
+            
+            # Display interactive table
+            st.dataframe(
+                df,
+                column_config={
+                    "Category": st.column_config.TextColumn("Category", width="small"),
+                    "Market": st.column_config.TextColumn("Market", width="large"),
+                    "Yes Price": st.column_config.NumberColumn(
+                        "Yes",
+                        format="$%.2f",
+                        width="small"
+                    ),
+                    "No Price": st.column_config.NumberColumn(
+                        "No",
+                        format="$%.2f",
+                        width="small"
+                    ),
+                    "URL": st.column_config.LinkColumn(
+                        "Trade",
+                        display_text="View →",
+                        width="small"
+                    )
+                },
+                hide_index=True,
+                use_container_width=True,
+                height=600
+            )
     else:
         st.info("No markets found for selected filters")
 
