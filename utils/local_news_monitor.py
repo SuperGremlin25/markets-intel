@@ -20,41 +20,61 @@ class LocalNewsMonitor:
     def __init__(self):
         self.feeds = {
             'oklahoma': {
-                'news9': {
-                    'name': 'News 9 Oklahoma City',
-                    'url': 'https://news.google.com/rss/search?q=Oklahoma%20City%20crime%20OR%20shooting%20OR%20arrest%20OR%20police%20when:7d&hl=en-US&gl=US&ceid=US:en',
+                'okc_crime': {
+                    'name': 'Oklahoma City Crime News',
+                    'url': 'https://news.google.com/rss/search?q=%22Oklahoma%20City%22%20(crime%20OR%20shooting%20OR%20shot%20OR%20arrest%20OR%20police%20OR%20killed%20OR%20murder)%20when:2d&hl=en-US&gl=US&ceid=US:en',
                     'city': 'Oklahoma City'
                 },
-                'kjrh': {
-                    'name': 'KJRH Tulsa',
-                    'url': 'https://news.google.com/rss/search?q=Tulsa%20crime%20OR%20shooting%20OR%20arrest%20OR%20police%20when:7d&hl=en-US&gl=US&ceid=US:en',
-                    'city': 'Tulsa'
+                'okc_breaking': {
+                    'name': 'OKC Breaking News',
+                    'url': 'https://news.google.com/rss/search?q=%22Oklahoma%20City%22%20(breaking%20OR%20incident%20OR%20investigation)%20when:2d&hl=en-US&gl=US&ceid=US:en',
+                    'city': 'Oklahoma City'
                 },
-                'tulsaworld': {
-                    'name': 'Tulsa World',
-                    'url': 'https://news.google.com/rss/search?q=Oklahoma%20storm%20OR%20power%20OR%20emergency%20when:7d&hl=en-US&gl=US&ceid=US:en',
-                    'city': 'Tulsa'
+                'okc_weather': {
+                    'name': 'Oklahoma City Weather',
+                    'url': 'https://news.google.com/rss/search?q=Oklahoma%20City%20storm%20OR%20tornado%20OR%20weather%20OR%20flood%20when:3d&hl=en-US&gl=US&ceid=US:en',
+                    'city': 'Oklahoma City'
+                },
+                'okc_power': {
+                    'name': 'Oklahoma City Power',
+                    'url': 'https://news.google.com/rss/search?q=Oklahoma%20City%20power%20OR%20outage%20OR%20OGE%20when:3d&hl=en-US&gl=US&ceid=US:en',
+                    'city': 'Oklahoma City'
                 },
                 'oklahoman': {
                     'name': 'The Oklahoman',
                     'url': 'https://www.oklahoman.com/rss',
+                    'city': 'Oklahoma City'
+                },
+                'tulsa_crime': {
+                    'name': 'Tulsa Crime News',
+                    'url': 'https://news.google.com/rss/search?q=Tulsa%20crime%20OR%20shooting%20OR%20arrest%20OR%20police%20when:3d&hl=en-US&gl=US&ceid=US:en',
+                    'city': 'Tulsa'
+                },
+                'tulsa_weather': {
+                    'name': 'Tulsa Weather',
+                    'url': 'https://news.google.com/rss/search?q=Tulsa%20storm%20OR%20tornado%20OR%20weather%20OR%20flood%20when:3d&hl=en-US&gl=US&ceid=US:en',
+                    'city': 'Tulsa'
+                },
+                'oklahoma_statewide': {
+                    'name': 'Oklahoma Statewide',
+                    'url': 'https://news.google.com/rss/search?q=Oklahoma%20emergency%20OR%20alert%20OR%20cyber%20when:3d&hl=en-US&gl=US&ceid=US:en',
                     'city': 'Oklahoma City'
                 }
             },
         }
         
         self.keywords = {
-            'power': ['power', 'outage', 'blackout', 'grid', 'electricity', 'utility'],
-            'crime': ['crime', 'shooting', 'robbery', 'assault', 'murder', 'arrest', 'police', 'suspect', 'investigation', 'homicide', 'burglary', 'theft', 'stolen', 'wanted', 'fugitive', 'jail', 'prison', 'convicted', 'charges', 'indicted'],
-            'cyber': ['cyber', 'hack', 'breach', 'ransomware', 'data leak', 'security'],
-            'emergency': ['emergency', 'alert', 'warning', 'danger', 'evacuation'],
-            'weather': ['tornado', 'storm', 'flood', 'hurricane', 'severe weather']
+            'power': ['power', 'outage', 'blackout', 'grid', 'electricity', 'utility', 'oge', 'pso'],
+            'crime': ['crime', 'shooting', 'shot', 'fired', 'gunfire', 'robbery', 'assault', 'murder', 'killed', 'death', 'arrest', 'arrested', 'police', 'officer', 'suspect', 'investigation', 'homicide', 'burglary', 'theft', 'stolen', 'wanted', 'fugitive', 'jail', 'prison', 'convicted', 'charges', 'charged', 'indicted', 'victim', 'stabbing', 'stabbed', 'attack', 'attacked', 'violence', 'violent', 'weapon', 'gun', 'knife'],
+            'cyber': ['cyber', 'hack', 'hacked', 'breach', 'breached', 'ransomware', 'data leak', 'security', 'scam', 'fraud'],
+            'emergency': ['emergency', 'alert', 'warning', 'danger', 'evacuation', 'evacuate', 'rescue'],
+            'weather': ['tornado', 'storm', 'flood', 'flooding', 'hurricane', 'severe weather', 'thunderstorm', 'hail', 'wind', 'rain', 'lightning']
         }
         
         self.last_request_time = 0
         self.min_request_interval = 1
         self.initial_feed_keys = {
-            'oklahoma': ['news9', 'kjrh', 'tulsaworld', 'oklahoman']
+            'oklahoma': ['okc_crime', 'okc_breaking', 'okc_weather', 'okc_power', 'oklahoman', 'tulsa_crime', 'tulsa_weather', 'oklahoma_statewide']
         }
     
     def _clean_html(self, text):
