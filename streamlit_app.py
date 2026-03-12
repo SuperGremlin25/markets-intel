@@ -60,10 +60,15 @@ def load_market_data(view_mode):
     polymarket_data = fetch_polymarket_markets('All')
     combined_data = polymarket_data
     
-    # Add 24hr price changes
-    for market in combined_data:
-        change = db.get_24hr_price_change(market['id'])
-        market['change_24hr'] = change if change is not None else 0
+    # Add 24hr price changes (skip if Supabase not configured)
+    try:
+        for market in combined_data:
+            change = db.get_24hr_price_change(market['id'])
+            market['change_24hr'] = change if change is not None else 0
+    except:
+        # Supabase not configured, skip price changes
+        for market in combined_data:
+            market['change_24hr'] = 0
     
     # Sort based on view mode
     if view_mode == "Most Active":
@@ -76,9 +81,12 @@ def load_market_data(view_mode):
 with st.spinner("Loading market data..."):
     markets = load_market_data(view_mode)
     
-    # Store snapshots for historical tracking
-    for market in markets[:50]:  # Store top 50 markets
-        db.store_market_snapshot(market)
+    # Store snapshots for historical tracking (skip if Supabase not configured)
+    try:
+        for market in markets[:50]:  # Store top 50 markets
+            db.store_market_snapshot(market)
+    except:
+        pass  # Supabase not configured, skip storage
 
 @st.cache_data(ttl=900, show_spinner=False)
 def get_cached_news_data():
