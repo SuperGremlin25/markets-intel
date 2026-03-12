@@ -22,6 +22,7 @@ Thumbs.db
 # Environment variables
 .env
 .env.local
+.env.production
 
 # Database
 *.db
@@ -33,7 +34,36 @@ data/
 secrets.toml
 .streamlit/secrets.toml
 
-# Discord bot session
+# Discord bot
 *.sessionlog
-node_modules/
 *.log
+
+# Generated files
+*.html
+exports/
+downloads/
+
+# Test files (archived)
+test_*.py
+debug_*.py
+check_*.py
+verify_*.py
+find_*.py
+
+# Archive (local development only)
+archive/
+
+# Node modules
+node_modules/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Coverage
+.coverage
+htmlcov/
+
+# Pytest
+.pytest_cache/

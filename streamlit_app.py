@@ -1,11 +1,14 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-import plotly.graph_objects as go
+import time
 from utils.api_client import fetch_polymarket_markets
-from utils.data_processor import normalize_market_data, calculate_arbitrage
-from utils.visualizations import create_odds_chart, create_network_map
+from utils.data_processor import normalize_market_data
 from utils.db_manager import db
+from utils.power_grid_monitor import PowerGridMonitor
+from utils.cyber_monitor import CyberThreatMonitor
+from utils.local_news_monitor import LocalNewsMonitor
+from utils.sentiment_analyzer import score_articles_parallel
 import config
 
 st.set_page_config(
@@ -33,8 +36,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("🎯 Markets Intel")
-st.markdown("**AI-Powered Prediction Market Intelligence**")
-st.markdown("Real-time data • Social sentiment • Arbitrage detection • Whale tracking")
+st.markdown("**Live Prediction Markets + Regional Intelligence**")
+st.markdown("Real-time Polymarket odds • Oklahoma intelligence monitoring")
 
 with st.sidebar:
     st.header("⚙️ View Options")
@@ -45,31 +48,12 @@ with st.sidebar:
     )
     
     st.markdown("**Platform:** Polymarket")
-    st.caption("Kalshi integration removed due to data quality issues")
-    
-    st.markdown("---")
-    st.markdown("### � Upgrade")
-    st.markdown("**Premium** ($29/mo)")
-    st.markdown("• AI predictions")
-    st.markdown("• Real-time whale alerts")
-    st.markdown("• Arbitrage opportunities")
-    
-    st.markdown("**Pro** ($99/mo)")
-    st.markdown("• Everything in Premium")
-    st.markdown("• Auto-execution guidance")
-    st.markdown("• Portfolio optimizer")
-    
-    st.link_button("Upgrade Now", "https://digital-insurgent-media.com/markets", use_container_width=True)
-    
-    st.markdown("---")
-    st.markdown("### 🎮 Join Community")
-    st.markdown("[Discord Server](https://discord.gg/your-invite)")
-    st.markdown("Get alerts, discuss markets, share wins")
+    st.caption("Free public version")
     
     st.markdown("---")
     st.markdown("### 🔗 Trade on Polymarket")
     st.markdown("[Sign up for Polymarket](https://polymarket.com)")
-    st.markdown("*Affiliate link - we may earn commission*")
+    st.caption("Start trading prediction markets")
 
 def load_market_data(view_mode):
     # Only fetch Polymarket data (Kalshi removed due to data quality issues)
@@ -96,7 +80,34 @@ with st.spinner("Loading market data..."):
     for market in markets[:50]:  # Store top 50 markets
         db.store_market_snapshot(market)
 
-tab1, tab2, tab3, tab4 = st.tabs(["📊 Live Odds", "📈 Historical Trends", "🕸️ Network Analysis", "💎 Arbitrage"])
+@st.cache_data(ttl=900, show_spinner=False)
+def get_cached_news_data():
+    news_monitor = LocalNewsMonitor()
+    data = news_monitor.get_all_news_parallel(hours=24)
+    scored_articles = score_articles_parallel(data['all_articles'])
+    scored_articles.sort(key=lambda x: x.get('sentiment_score', 0))
+    
+    categorized = {
+        'power': [],
+        'crime': [],
+        'cyber': [],
+        'emergency': [],
+        'weather': []
+    }
+    
+    for article in scored_articles:
+        for category in article.get('categories', []):
+            categorized.setdefault(category, []).append(article)
+    
+    data['all_articles'] = scored_articles
+    data['by_category'] = categorized
+    
+    return {
+        'data': data,
+        'fetched_at': time.time()
+    }
+
+tab1, tab2 = st.tabs(["📊 Live Odds", "🛡️ Intelligence"])
 
 with tab1:
     st.header("Live Market Odds")
@@ -104,57 +115,217 @@ with tab1:
     if markets:
         st.success(f"Found {len(markets)} active markets")
         
-        for idx, market in enumerate(markets):
-            col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
-            
-            with col1:
-                st.markdown(f"**{market['title']}**")
-                st.caption(f"{market['platform']} • {market['category']}")
-            
-            with col2:
-                st.metric("Yes", f"${market['yes_price']:.2f}")
-            
-            with col3:
-                st.metric("No", f"${market['no_price']:.2f}")
-            
-            with col4:
-                st.link_button("View Market", market['url'], use_container_width=True)
+        # Group by category
+        categories = {}
+        for market in markets:
+            cat = market.get('category', 'Other')
+            if cat not in categories:
+                categories[cat] = []
+            categories[cat].append(market)
+        
+        # Display by category in tables
+        for category, cat_markets in sorted(categories.items()):
+            with st.expander(f"📂 {category} ({len(cat_markets)} markets)", expanded=(category == 'Politics')):
+                table_data = []
+                for market in cat_markets[:20]:
+                    table_data.append({
+                        'Market': market['title'][:80],
+                        'Yes': f"${market['yes_price']:.2f}",
+                        'No': f"${market['no_price']:.2f}",
+                        'Platform': market['platform'],
+                        'Link': market['url']
+                    })
+                
+                if table_data:
+                    df = pd.DataFrame(table_data)
+                    for idx, row in df.iterrows():
+                        col1, col2, col3, col4, col5 = st.columns([4, 1, 1, 1, 1])
+                        with col1:
+                            st.markdown(f"**{row['Market']}**")
+                        with col2:
+                            st.markdown(row['Yes'])
+                        with col3:
+                            st.markdown(row['No'])
+                        with col4:
+                            st.caption(row['Platform'])
+                        with col5:
+                            st.markdown(f"[View]({row['Link']})")
             
             st.markdown("---")
     else:
         st.info("No markets found for selected filters")
 
 with tab2:
-    st.header("📈 Historical Price Trends")
-    st.info("Historical data visualization - Coming soon in Phase 2")
-    st.markdown("Track how market odds change over time")
-
-with tab3:
-    st.header("🕸️ Market Correlation Network")
-    st.info("Network analysis - Coming soon in Phase 2")
-    st.markdown("Visualize how different markets influence each other")
-
-with tab4:
-    st.header("💎 Arbitrage Opportunities")
+    st.header("🛡️ Oklahoma Intelligence")
+    st.markdown("**Real-time monitoring: Power Grid • Cyber Threats • Local News**")
     
-    arbitrage_opps = calculate_arbitrage(markets)
-    
-    if arbitrage_opps:
-        st.success(f"Found {len(arbitrage_opps)} arbitrage opportunities!")
-        
-        for opp in arbitrage_opps:
-            with st.expander(f"🎯 {opp['title']} - {opp['profit']:.2%} profit"):
-                col1, col2 = st.columns(2)
+    # Power Grid Status
+    with st.expander("⚡ Power Grid Status", expanded=True):
+        with st.spinner("Checking power grid status..."):
+            try:
+                power_monitor = PowerGridMonitor()
+                grid_summary = power_monitor.get_summary()
+                
+                col1, col2, col3 = st.columns(3)
                 
                 with col1:
-                    st.markdown(f"**Buy on {opp['platform_1']}**")
-                    st.markdown(f"Price: {opp['price_1']:.2%}")
+                    status_color = "🟢" if grid_summary['status'] == 'normal' else "🟡" if grid_summary['status'] == 'warning' else "🔴"
+                    st.metric(
+                        "Grid Health",
+                        f"{grid_summary['grid_health_score']}/10",
+                        help="10 = Perfect, 0 = Major Outages"
+                    )
+                    st.markdown(f"{status_color} **{grid_summary['status'].upper()}**")
                 
                 with col2:
-                    st.markdown(f"**Sell on {opp['platform_2']}**")
-                    st.markdown(f"Price: {opp['price_2']:.2%}")
-    else:
-        st.info("No arbitrage opportunities found at current prices")
+                    st.metric(
+                        "Customers Out",
+                        f"{grid_summary['total_customers_out']:,}",
+                        help="Total customers without power in OK/TX"
+                    )
+                
+                with col3:
+                    st.metric(
+                        "Major Outages",
+                        len(grid_summary['major_outages']),
+                        help="Outages affecting >5,000 customers or >5%"
+                    )
+                
+                if grid_summary['oklahoma_outages']:
+                    st.markdown("**Oklahoma Outages:**")
+                    for outage in grid_summary['oklahoma_outages']:
+                        st.markdown(f"• {outage['utility']}: {outage['customers_out']:,} customers ({outage['percent_out']:.1f}%)")
+                
+                if grid_summary['texas_outages']:
+                    st.markdown("**Texas Outages:**")
+                    for outage in grid_summary['texas_outages']:
+                        st.markdown(f"• {outage['utility']}: {outage['customers_out']:,} customers ({outage['percent_out']:.1f}%)")
+                
+                if grid_summary['major_outages']:
+                    st.warning("⚠️ Major Outages Detected")
+                    for outage in grid_summary['major_outages']:
+                        st.markdown(f"**{outage['utility']}** ({outage['state']}): {outage['reason']}")
+                
+                # Show outages on map
+                if st.button("🗺️ View Outage Map", key="power_map"):
+                    try:
+                        import folium
+                        from streamlit_folium import folium_static
+                        
+                        m = folium.Map(location=[34.5, -98.5], zoom_start=6)
+                        
+                        all_outages = grid_summary['oklahoma_outages'] + grid_summary['texas_outages']
+                        for outage in all_outages:
+                            locations = {
+                                'OG&E': [35.4676, -97.5164],
+                                'PSO': [36.1540, -95.9928],
+                                'Oncor': [32.7767, -96.7970],
+                                'CenterPoint Energy': [29.7604, -95.3698]
+                            }
+                            
+                            loc = locations.get(outage['utility'], [34.5, -98.5])
+                            
+                            folium.CircleMarker(
+                                location=loc,
+                                radius=min(outage['customers_out'] / 100, 20),
+                                popup=f"{outage['utility']}<br>{outage['customers_out']:,} customers out<br>{outage['percent_out']:.1f}%",
+                                color='red',
+                                fill=True,
+                                fillColor='red',
+                                fillOpacity=0.6
+                            ).add_to(m)
+                        
+                        folium_static(m)
+                    except ImportError:
+                        st.info("Install streamlit-folium to view maps: pip install streamlit-folium")
+                
+            except Exception as e:
+                st.error(f"Error loading power grid data: {str(e)}")
+    
+    # Cyber Threat Status
+    with st.expander("🔐 Cyber Threat Level", expanded=True):
+        with st.spinner("Checking cyber threats..."):
+            try:
+                cyber_monitor = CyberThreatMonitor()
+                cyber_summary = cyber_monitor.get_cyber_intelligence_summary()
+                
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    threat_color = "🟢" if cyber_summary['status'] == 'low' else "🟡" if cyber_summary['status'] == 'moderate' else "🟠" if cyber_summary['status'] == 'elevated' else "🔴"
+                    st.metric(
+                        "Threat Level",
+                        f"{cyber_summary['threat_level']}/10",
+                        help="0 = Safe, 10 = Critical"
+                    )
+                    st.markdown(f"{threat_color} **{cyber_summary['status'].upper()}**")
+                
+                with col2:
+                    st.metric(
+                        "CISA Alerts (7d)",
+                        cyber_summary['total_alerts'],
+                        help="Recent cybersecurity alerts from CISA"
+                    )
+                
+                with col3:
+                    st.metric(
+                        "Service Outages",
+                        len(cyber_summary['service_outages']),
+                        help="Critical services experiencing issues"
+                    )
+                
+                if cyber_summary['recent_alerts']:
+                    st.markdown("**Recent Alerts:**")
+                    for alert in cyber_summary['recent_alerts'][:3]:
+                        severity_emoji = "🔴" if alert['severity'] == 'critical' else "🟠" if alert['severity'] == 'high' else "🟡"
+                        st.markdown(f"{severity_emoji} [{alert['severity'].upper()}] {alert['title']}")
+                        st.caption(f"{alert['category']} • {alert['published'][:10]}")
+                        if 'link' in alert and alert['link']:
+                            st.markdown(f"[🔗 View Alert Details]({alert['link']})")
+                
+            except Exception as e:
+                st.error(f"Error loading cyber threat data: {str(e)}")
+    
+    # Local News Feed
+    with st.expander("📰 Oklahoma News Feed", expanded=False):
+        with st.spinner("Loading local news..."):
+            try:
+                news_result = get_cached_news_data()
+                news_data = news_result['data']
+                news_age_mins = max(0, int((time.time() - news_result['fetched_at']) / 60))
+                
+                st.caption(f"News data refreshed {news_age_mins} min ago")
+                st.info("📊 **Sentiment Guide:** 🟢 Positive (+0.05 to +1.0) • ⚪ Neutral (-0.05 to +0.05) • 🔴 Negative (-1.0 to -0.05)")
+                
+                col1, col2, col3, col4 = st.columns(4)
+                with col1:
+                    st.metric("Articles", news_data['total_count'])
+                with col2:
+                    st.metric("Active Feeds", news_data['successful_count'])
+                with col3:
+                    negative_articles = len([article for article in news_data['all_articles'] if article.get('sentiment_score', 0) <= -0.05])
+                    st.metric("Negative", negative_articles)
+                with col4:
+                    avg_sentiment = 0
+                    if news_data['all_articles']:
+                        avg_sentiment = sum([article.get('sentiment_score', 0) for article in news_data['all_articles']]) / len(news_data['all_articles'])
+                    st.metric("Avg Sentiment", f"{avg_sentiment:.2f}")
+                
+                category_order = ['crime', 'weather', 'power', 'cyber', 'emergency']
+                for category in category_order:
+                    articles = news_data['by_category'].get(category, [])
+                    if articles:
+                        st.markdown(f"### {category.title()} ({len(articles)} articles)")
+                        for article in articles[:5]:
+                            st.markdown(f"**[{article['title']}]({article['link']})**")
+                            st.caption(f"{article['source']} • {article['city']} • {article['published'][:10]} • {article['sentiment_label']} {article['sentiment_score']:+.2f}")
+                            if article.get('summary'):
+                                st.markdown(article['summary'])
+                        st.markdown("---")
+                if not news_data['all_articles']:
+                    st.info("No recent local news matched the monitored categories.")
+            except Exception as e:
+                st.error(f"Error loading local news: {str(e)}")
 
 st.markdown("---")
 st.caption("Data updated every 60 seconds • Built by Digital Insurgent Media")
