@@ -45,11 +45,14 @@ UPDATE ON subscriptions FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()
 -- These are safe defaults for the anon key
 ALTER TABLE market_snapshots ENABLE ROW LEVEL SECURITY;
 ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
--- Policy: Allow inserts from authenticated service role
-CREATE POLICY "Allow service role to insert market snapshots" ON market_snapshots FOR
-INSERT WITH CHECK (true);
+-- Policy: Allow anyone to insert market snapshots (public market data)
+DROP POLICY IF EXISTS "Allow service role to insert market snapshots" ON market_snapshots;
+CREATE POLICY "Allow anon to insert market snapshots" ON market_snapshots FOR
+INSERT TO anon WITH CHECK (true);
 -- Policy: Allow reads for everyone (public data)
+DROP POLICY IF EXISTS "Allow public read access to market snapshots" ON market_snapshots;
 CREATE POLICY "Allow public read access to market snapshots" ON market_snapshots FOR
-SELECT USING (true);
+SELECT TO anon USING (true);
 -- Policy: Only service role can manage subscriptions
-CREATE POLICY "Service role can manage subscriptions" ON subscriptions FOR ALL USING (true);
+DROP POLICY IF EXISTS "Service role can manage subscriptions" ON subscriptions;
+CREATE POLICY "Service role can manage subscriptions" ON subscriptions FOR ALL TO service_role USING (true);
