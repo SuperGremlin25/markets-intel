@@ -59,7 +59,7 @@ class DatabaseManager:
             self.client.table('market_snapshots').insert(data).execute()
             return True
         except Exception as e:
-            print(f"Error storing market snapshot: {e}")
+            # Silently fail if Supabase not configured
             return False
     
     def get_market_history(self, market_id: str, hours: int = 24) -> List[Dict]:
@@ -80,7 +80,7 @@ class DatabaseManager:
             
             return response.data
         except Exception as e:
-            print(f"Error fetching market history: {e}")
+            # Silently fail if Supabase not configured
             return []
     
     def get_24hr_price_change(self, market_id: str) -> Optional[float]:
